@@ -9,14 +9,38 @@ model = joblib.load('twitter_sentiment_model.pkl')
 vectorizer = joblib.load('tfidf_vectorizer.pkl')
 le = joblib.load('label_encoder.pkl')
 
-# Cleaning function
+# EXACT SAME CLEANING AS train.py
 def clean_tweet(tweet):
     tweet = str(tweet).lower()
+
+    # Negation handling (VERY IMPORTANT)
+    negation_patterns = [
+        r"not\s+(\w+)",
+        r"never\s+(\w+)",
+        r"no\s+(\w+)",
+        r"don't\s+(\w+)",
+        r"didn't\s+(\w+)",
+        r"doesn't\s+(\w+)",
+        r"cant\s+(\w+)",
+        r"cannot\s+(\w+)"
+    ]
+
+    for pattern in negation_patterns:
+        tweet = re.sub(pattern, r"not_\1", tweet)
+
+    # Emoticons
+    tweet = tweet.replace(":(", " sad")
+    tweet = tweet.replace(":-(", " sad")
+    tweet = tweet.replace(":)", " happy")
+    tweet = tweet.replace(":|", " neutral")
+
+    # Remove noise
     tweet = re.sub(r"http\S+|www\S+", "", tweet)
     tweet = re.sub(r"@\w+", "", tweet)
-    tweet = re.sub(r"#","", tweet)
-    tweet = re.sub(r"[^A-Za-z0-9\s]","", tweet)
-    tweet = re.sub(r"\s+"," ", tweet).strip()
+    tweet = tweet.replace("#", "")
+    tweet = re.sub(r"[^A-Za-z0-9_\s]", "", tweet)
+    tweet = re.sub(r"\s+", " ", tweet).strip()
+
     return tweet
 
 def predict_sentiment(tweet):
